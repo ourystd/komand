@@ -8,21 +8,26 @@ async function main() {
   const watcher = fsPromises.watch(commandsFilename);
   const cmdFileHandler = await fsPromises.open(commandsFilename, "r");
 
-  for await (const event of watcher) {
-    console.log(event);
+  cmdFileHandler.on("change", async () => {
     const { size } = await cmdFileHandler.stat();
-    const buff = Buffer.alloc(fileSize);
+    const buff = Buffer.alloc(size);
     const offset = 0;
     const length = buff.byteLength;
     const position = 0;
 
-    const content = await cmdFileHandler.read({
+    await cmdFileHandler.read({
       buffer: buff,
       offset,
       length,
       position,
     });
-    console.log(content, { fileSize });
+    console.log(buff.toString());
+  });
+  for await (const event of watcher) {
+    console.log(event);
+    if (event.eventType === "change") {
+      cmdFileHandler.emit(event.eventType);
+    }
   }
 }
 
